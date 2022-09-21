@@ -6,6 +6,7 @@
   "type": "module",
   "author": "Sammy#1001",
   "license": "MIT",
+  "repository": "https://github.com/SammyWhamy/hapi.git",
   "private": false,
   "scripts": {
     "start": "node dist/index.js",
