@@ -1,0 +1,8 @@
+version: '2'
+
+services:
+  hapi:
+    build: .
+    image: ghcr.io/sammywhamy/hapi:latest
+    ports:
+      - "8080:80"

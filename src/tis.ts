@@ -1,0 +1,72 @@
+import {exec as execSync} from "child_process";
+import util from "util";
+
+const exec = util.promisify(execSync);
+
+const infoRegex = /Tag count: (?<tag_count>.*)\s*File count: (?<file_count>.*)\s*Tags: (?<tag_list>.*)/;
+
+export async function callTIS(args: string[]): Promise<string> {
+    const {stdout, stderr} = await exec(`./tis ${args.join(" ")}`);
+
+    if (stderr)
+        throw new Error(stderr);
+
+    return stdout.trim();
+}
+
+export async function getRandom() {
+    return await callTIS(["random"]);
+}
+
+export async function getImages(tags: string[], exclude?: string[], exclusive?: boolean, limit?: number) {
+    const formattedTags = tags.map(tag => tag.trim().toLowerCase()).join(";");
+
+    const result = await callTIS(["list", `"${formattedTags}"`]);
+    let files = result.split(", ");
+
+    if (exclusive) {
+        const fileMap = new Map<string, number>();
+        for (const file of files) {
+            fileMap.set(file, (fileMap.get(file) ?? 0) + 1);
+        }
+        files = Array.from(fileMap.entries()).filter(([_, count]) => count === tags.length).map(([file]) => file);
+    }
+
+    if (exclude && exclude.length > 0) {
+        const formattedExclude = exclude.map(tag => tag.trim().toLowerCase()).join(";");
+        const excludeResult = await callTIS(["list", `"${formattedExclude}"`]);
+        const excludeFiles = excludeResult.split(", ");
+        files = files.filter(file => !excludeFiles.includes(file));
+    }
+
+    if (!limit)
+        limit = 1;
+    else if (limit > 10)
+        limit = 10;
+    else if (limit < 1)
+        limit = 1;
+
+    const randomFiles = [];
+    for (let i = 0; i < limit; i++) {
+        if (files.length === 0)
+            break;
+
+        const index = Math.floor(Math.random() * files.length);
+        randomFiles.push(files[index]);
+        files.splice(index, 1);
+    }
+
+    return randomFiles;
+}
+
+export async function getInfo() {
+    const result = await callTIS(["info"]);
+    const match = result.match(infoRegex);
+
+    const {tag_count, file_count, tag_list} = match!.groups as {tag_count: string, file_count: string, tag_list: string};
+    return {
+        tag_count: parseInt(tag_count),
+        file_count: parseInt(file_count),
+        tag_list: tag_list.split(", ").map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0),
+    };
+}
