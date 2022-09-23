@@ -18,25 +18,28 @@ export async function getRandom() {
     return await callTIS(["random"]);
 }
 
-export async function getImages(tags: string[], exclude?: string[], exclusive?: boolean, limit?: number) {
+export async function getImages(tags: string[], exclude?: string[], exclusive?: boolean, exclusiveExclude?: boolean, limit?: number) {
     const formattedTags = tags.map(tag => tag.trim().toLowerCase()).join(";");
+    const args = ["list", `"${formattedTags}"`];
 
-    const result = await callTIS(["list", `"${formattedTags}"`]);
-    let files = result.split(", ");
+    let excluded = 0;
 
-    if (exclusive) {
-        const fileMap = new Map<string, number>();
-        for (const file of files) {
-            fileMap.set(file, (fileMap.get(file) ?? 0) + 1);
-        }
-        files = Array.from(fileMap.entries()).filter(([_, count]) => count === tags.length).map(([file]) => file);
-    }
+    if (exclusive)
+        args.push("--exclusive");
+
+    const result = await callTIS(args);
+    let files = [...new Set(result.split(", "))];
 
     if (exclude && exclude.length > 0) {
         const formattedExclude = exclude.map(tag => tag.trim().toLowerCase()).join(";");
-        const excludeResult = await callTIS(["list", `"${formattedExclude}"`]);
-        const excludeFiles = excludeResult.split(", ");
+        const excludeArgs = ["list", `"${formattedExclude}"`];
+        if (exclusiveExclude)
+            excludeArgs.push("--exclusive");
+        const excludeResult = await callTIS(excludeArgs);
+        const excludeFiles = [...new Set(excludeResult.split(", "))];
+        const lenBefore = files.length;
         files = files.filter(file => !excludeFiles.includes(file));
+        excluded = lenBefore - files.length;
     }
 
     if (!limit)
@@ -56,7 +59,10 @@ export async function getImages(tags: string[], exclude?: string[], exclusive?: 
         files.splice(index, 1);
     }
 
-    return randomFiles;
+    return {
+        files: randomFiles,
+        excluded,
+    };
 }
 
 export async function getInfo() {
