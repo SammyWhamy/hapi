@@ -107,6 +107,7 @@ server.get('/api', async (req, res) => {
     try {
         let {tags, exclude, exclusive, exclusiveExclude, limit} = req.query as any;
         exclusive = Boolean(exclusive);
+        exclusiveExclude = Boolean(exclusiveExclude);
         limit = Number(limit);
 
         if (!tags || typeof tags !== "string" || tags.length === 0) {
