@@ -60,6 +60,7 @@ export async function getImages(tags: string[], exclude?: string[], exclusive?: 
     }
 
     return {
+        total: files.length,
         files: randomFiles,
         excluded,
     };

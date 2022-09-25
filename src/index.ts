@@ -25,6 +25,7 @@ server.get('/', async (_req, res) => {
                     "limit": "Int: Number of images to return (default: 1, max: 10)",
                 },
                 "response": {
+                    "total": "Int: Number of images that matched the search",
                     "files": "String[]: Array of image URLs",
                     "excluded": "Int: Number of images excluded by the exclude parameter",
                 }
@@ -38,6 +39,7 @@ server.get('/', async (_req, res) => {
                     "limit": "Int: Number of images to return (default: 1, max: 10)",
                 },
                 "response": {
+                    "total": "Int: Number of images that matched the search",
                     "files": "String[]: Array of image URLs",
                     "excluded": "Int: Number of images excluded by the exclude parameter",
                 }
@@ -92,8 +94,9 @@ server.post('/api', async (req, res) => {
             return res.status(400).send({error: "Bad Request, limit must be a number"});
         }
 
-        const {files, excluded} = await getImages(tags, exclude, exclusive, limit);
+        const {files, excluded, total} = await getImages(tags, exclude, exclusive, exclusiveExclude, limit);
         return res.send({
+            total,
             files: files.map(file => `https://cdn.ecchi.cloud/${file}`),
             excluded
         });
@@ -106,8 +109,8 @@ server.post('/api', async (req, res) => {
 server.get('/api', async (req, res) => {
     try {
         let {tags, exclude, exclusive, exclusiveExclude, limit} = req.query as any;
-        exclusive = Boolean(exclusive);
-        exclusiveExclude = Boolean(exclusiveExclude);
+        exclusive = exclusive === "true" || exclusive === "1";
+        exclusiveExclude = exclusiveExclude === "true" || exclusiveExclude === "1";
         limit = Number(limit);
 
         if (!tags || typeof tags !== "string" || tags.length === 0) {
@@ -118,20 +121,13 @@ server.get('/api', async (req, res) => {
             return res.status(400).send({error: "Bad Request, exclude must be a string"});
         }
 
-        if (exclusive && typeof exclusive !== "boolean") {
-            return res.status(400).send({error: "Bad Request, exclusive must be a boolean"});
-        }
-
-        if (exclusiveExclude && typeof exclusiveExclude !== "boolean") {
-            return res.status(400).send({error: "Bad Request, exclusiveExclude must be a boolean"});
-        }
-
         if (limit && typeof limit !== "number") {
             return res.status(400).send({error: "Bad Request, limit must be a number"});
         }
 
-        const {files, excluded} = await getImages(tags.split(";"), exclude?.split(";"), exclusive, limit);
+        const {files, excluded, total} = await getImages(tags.split(";"), exclude?.split(";"), exclusive, exclusiveExclude, limit);
         return res.send({
+            total,
             files: files.map(file => `https://cdn.ecchi.cloud/${file}`),
             excluded,
         });
