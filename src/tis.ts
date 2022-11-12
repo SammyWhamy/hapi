@@ -4,6 +4,7 @@ import util from "util";
 const exec = util.promisify(execSync);
 
 const infoRegex = /Tag count: (?<tag_count>.*)\s*File count: (?<file_count>.*)\s*Tags: (?<tag_list>.*)/;
+const hiddenTags = ["loli", "shota"];
 
 export async function callTIS(args: string[]): Promise<string> {
     const {stdout, stderr} = await exec(`./tis ${args.join(" ")}`);
@@ -15,12 +16,12 @@ export async function callTIS(args: string[]): Promise<string> {
 }
 
 export async function getRandom() {
-    return await callTIS(["random"]);
+    return await callTIS(["random", "--exclude", ...hiddenTags]);
 }
 
 export async function getImages(tags: string[], exclude?: string[], exclusive?: boolean, exclusiveExclude?: boolean, limit?: number) {
     const formattedTags = tags.map(tag => tag.trim().toLowerCase()).join(";");
-    const args = ["list", `"${formattedTags}"`];
+    const args = ["list", `"${formattedTags}"`, "--exclude", ...hiddenTags];
 
     let excluded = 0;
 
