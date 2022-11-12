@@ -75,6 +75,6 @@ export async function getInfo() {
     return {
         tag_count: parseInt(tag_count),
         file_count: parseInt(file_count),
-        tag_list: tag_list.split(", ").map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0),
+        tag_list: tag_list.split(", ").map(tag => tag.trim().toLowerCase()).filter(tag => tag.length > 0).filter(tag => !hiddenTags.includes(tag)),
     };
 }
