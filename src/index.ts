@@ -95,6 +95,11 @@ server.post('/api', async (req, res) => {
         }
 
         const {files, excluded, total} = await getImages(tags, exclude, exclusive, exclusiveExclude, limit);
+
+        if (files.length === 0) {
+            return res.status(404).send({error: "No images found"});
+        }
+
         return res.send({
             total,
             files: files.map(file => `https://cdn.ecchi.cloud/${file}`),
@@ -126,6 +131,11 @@ server.get('/api', async (req, res) => {
         }
 
         const {files, excluded, total} = await getImages(tags.split(";"), exclude?.split(";"), exclusive, exclusiveExclude, limit);
+
+        if (files.length === 0) {
+            return res.status(404).send({error: "No images found"});
+        }
+
         return res.send({
             total,
             files: files.map(file => `https://cdn.ecchi.cloud/${file}`),
